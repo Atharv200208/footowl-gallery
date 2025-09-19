@@ -28,9 +28,9 @@ type RootStackParamList = {
 };
 
 export default function HomeScreen() {
-    const [cachedItems, setCachedItems] = React.useState<any[]>([]);
-     const [isOffline, setIsOffline] = React.useState(false);
-    //  const [refreshing, setRefreshing] = React.useState(false);
+  const [cachedItems, setCachedItems] = React.useState<any[]>([]);
+  const [isOffline, setIsOffline] = React.useState(false);
+  //  const [refreshing, setRefreshing] = React.useState(false);
   const {
     data,
     fetchNextPage,
@@ -75,7 +75,6 @@ export default function HomeScreen() {
     })();
   }, [isOffline]);
 
-
   //  const onRefresh = useCallback(async () => {
   //   setRefreshing(true);
   //   try {
@@ -94,13 +93,11 @@ export default function HomeScreen() {
   // // Choose which list to render
   // const dataToRender = isOffline ? cachedItems : items;
 
-
-
   useEffect(() => {
     if (isError) console.warn("Image load error", error);
   }, [isError, error]);
 
-  const items = (data?.pages ?? []).flatMap((p:any) => p.items ?? []);
+  const items = (data?.pages ?? []).flatMap((p: any) => p.items ?? []);
   const cols = Math.max(1, Math.floor(Dimensions.get("window").width / 150));
 
   // ✅ Refresh handler
@@ -133,7 +130,7 @@ export default function HomeScreen() {
     }
   }, [isFocused]);
 
-  
+
 
   const { favorites, toggleFavorite, loadFavorites } = useFavoritesStore();
 
@@ -141,7 +138,7 @@ export default function HomeScreen() {
     loadFavorites();
   }, [loadFavorites]);
 
-    useEffect(() => {
+  useEffect(() => {
     (async () => {
       const status = await Network.getNetworkStateAsync();
       if (!status.isConnected) {
@@ -187,23 +184,6 @@ export default function HomeScreen() {
   const displayItems = items.length > 0 ? items : cachedItems;
   return (
     <View style={{ flex: 1 }}>
-      {/* ✅ Floating Favorites button */}
-      <TouchableOpacity
-        style={{
-          position: "absolute",
-          top: 50,
-          right: 20,
-          zIndex: 10,
-          backgroundColor: "rgba(0,0,0,0.6)",
-          paddingHorizontal: 12,
-          paddingVertical: 8,
-          borderRadius: 20,
-        }}
-        onPress={() => navigation.navigate("Favorites")}
-      >
-        <Text style={{ color: "white", fontSize: 14 }}>❤️ Favorites</Text>
-      </TouchableOpacity>
-
       {/* ✅ Main image grid */}
       <FlashList
         key={cols}
