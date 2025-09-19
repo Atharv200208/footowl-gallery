@@ -48,7 +48,7 @@ function TabNavigator() {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Favorites" component={FavoritesScreen} />
+      <Tab.Screen name="Favorites" component={FavoritesScreen}/>
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );

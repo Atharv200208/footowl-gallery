@@ -11,6 +11,7 @@ import { useNavigation, NavigationProp } from "@react-navigation/native";
 import { FlashList } from "@shopify/flash-list";
 import { Image as ExpoImage } from "expo-image";
 import { useFavoritesStore } from "../../state/favorites";
+import Toast from "react-native-toast-message";
 
 type RootStackParamList = {
   Home: undefined;
@@ -20,16 +21,28 @@ type RootStackParamList = {
 export default function FavoritesScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { favorites, loadFavorites, toggleFavorite } = useFavoritesStore();
+  const items = Object.values(favorites); // now full ImageItem objects
 
   const flatListRef = useRef<any>(null);
   const cols = Math.max(1, Math.floor(Dimensions.get("window").width / 150));
+  const handleFavoriteToggle = (item) => {
+  const isCurrentlyFavorite = !!favorites[item.id]; // check before toggle
+  toggleFavorite(item);
+
+  Toast.show({
+    type: 'success',
+    text1: isCurrentlyFavorite ? 'Removed from favorites' : 'Added to favorites',
+    position: 'top',
+    visibilityTime: 1500,
+  });
+};
 
   // load favorites on mount
   useEffect(() => {
     loadFavorites();
   }, [loadFavorites]);
 
-  const items = Object.values(favorites); // now full ImageItem objects
+  
 
   if (!items || items.length === 0) {
     return (
@@ -72,7 +85,7 @@ export default function FavoritesScreen() {
                 borderRadius: 16,
                 padding: 4,
               }}
-              onPress={() => toggleFavorite(item)} // ✅ pass full object
+              onPress={() => handleFavoriteToggle(item)} // ✅ pass full object
             >
               <Text style={{ fontSize: 18, color: "red" }}>♥</Text>
             </TouchableOpacity>

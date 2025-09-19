@@ -20,6 +20,7 @@ import { FlashList } from "@shopify/flash-list";
 import { useFavoritesStore } from "../../state/favorites";
 import * as Network from "expo-network";
 import { loadFromCache, saveToCache } from "../utils/imageCache";
+import Toast from "react-native-toast-message";
 
 type RootStackParamList = {
   Home: undefined;
@@ -75,24 +76,6 @@ export default function HomeScreen() {
     })();
   }, [isOffline]);
 
-  //  const onRefresh = useCallback(async () => {
-  //   setRefreshing(true);
-  //   try {
-  //     // 🔄 trigger a re-fetch of your API here
-  //     // Example:
-  //     // const fresh = await fetchItemsFromApi();
-  //     // setItems(fresh);
-  //     // saveToCache(fresh);
-
-  //     console.log("Refreshing… fetch latest items here");
-  //   } finally {
-  //     setRefreshing(false);
-  //   }
-  // }, []);
-
-  // // Choose which list to render
-  // const dataToRender = isOffline ? cachedItems : items;
-
   useEffect(() => {
     if (isError) console.warn("Image load error", error);
   }, [isError, error]);
@@ -147,6 +130,18 @@ export default function HomeScreen() {
       }
     })();
   }, []);
+
+  const handleFavoriteToggle = (item) => {
+    const isCurrentlyFavorite = !!favorites[item.id]; // check before toggle
+    toggleFavorite(item);
+  
+    Toast.show({
+      type: 'success',
+      text1: isCurrentlyFavorite ? 'Removed from favorites' : 'Added to favorites',
+      position: 'top',
+      visibilityTime: 1500,
+    });
+  };
 
   if (isLoading) {
     const { height, width } = Dimensions.get("window");
@@ -217,7 +212,7 @@ export default function HomeScreen() {
                   borderRadius: 16,
                   padding: 4,
                 }}
-                onPress={() => toggleFavorite(item)}
+                onPress={() => handleFavoriteToggle(item)}
               >
                 <Text style={{ fontSize: 18, color: favorites[item.id] ? "red" : "white" }}>
                   {favorites[item.id] ? "♥" : "♡"}
