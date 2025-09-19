@@ -18,14 +18,19 @@ import { SkeletonCard } from "../../components/skeletonCard";
 import { useInfiniteImages } from "../hooks/useInfiniteImages";
 import { FlashList } from "@shopify/flash-list";
 import { useFavoritesStore } from "../../state/favorites";
-
+import * as Network from "expo-network";
+import { loadFromCache, saveToCache } from "../utils/imageCache";
 
 type RootStackParamList = {
   Home: undefined;
   Viewer: { index: number; items: any[] };
+  Favorites: undefined;
 };
 
 export default function HomeScreen() {
+    const [cachedItems, setCachedItems] = React.useState<any[]>([]);
+     const [isOffline, setIsOffline] = React.useState(false);
+    //  const [refreshing, setRefreshing] = React.useState(false);
   const {
     data,
     fetchNextPage,
@@ -40,10 +45,62 @@ export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   useEffect(() => {
+    if (data?.pages?.length) {
+      const latestItems = data.pages.flatMap((p: any) => p.items ?? []);
+      if (latestItems.length > 0) {
+        saveToCache(latestItems);
+      }
+    }
+  }, [data]);
+
+
+  useEffect(() => {
+    const checkNetwork = async () => {
+      const status = await Network.getNetworkStateAsync();
+      setIsOffline(!status.isConnected);
+    };
+
+    checkNetwork();
+    const interval = setInterval(checkNetwork, 5000); // recheck every 5s
+    return () => clearInterval(interval);
+  }, []);
+
+  // ✅ Hydrate from cache if offline
+  useEffect(() => {
+    (async () => {
+      if (isOffline) {
+        const cache = await loadFromCache();
+        setCachedItems(cache);
+      }
+    })();
+  }, [isOffline]);
+
+
+  //  const onRefresh = useCallback(async () => {
+  //   setRefreshing(true);
+  //   try {
+  //     // 🔄 trigger a re-fetch of your API here
+  //     // Example:
+  //     // const fresh = await fetchItemsFromApi();
+  //     // setItems(fresh);
+  //     // saveToCache(fresh);
+
+  //     console.log("Refreshing… fetch latest items here");
+  //   } finally {
+  //     setRefreshing(false);
+  //   }
+  // }, []);
+
+  // // Choose which list to render
+  // const dataToRender = isOffline ? cachedItems : items;
+
+
+
+  useEffect(() => {
     if (isError) console.warn("Image load error", error);
   }, [isError, error]);
 
-  const items = ((data?.pages as any[]) ?? []).flatMap((p: any) => p.items ?? []);
+  const items = (data?.pages ?? []).flatMap((p:any) => p.items ?? []);
   const cols = Math.max(1, Math.floor(Dimensions.get("window").width / 150));
 
   // ✅ Refresh handler
@@ -76,11 +133,23 @@ export default function HomeScreen() {
     }
   }, [isFocused]);
 
-  useEffect(() => {
-    useFavoritesStore.getState().loadFavorites();
-  }, []);
+  
 
-  const { favorites, toggleFavorite } = useFavoritesStore();
+  const { favorites, toggleFavorite, loadFavorites } = useFavoritesStore();
+
+  useEffect(() => {
+    loadFavorites();
+  }, [loadFavorites]);
+
+    useEffect(() => {
+    (async () => {
+      const status = await Network.getNetworkStateAsync();
+      if (!status.isConnected) {
+        const cache = (await loadFromCache()) ?? [];
+        setCachedItems(cache);
+      }
+    })();
+  }, []);
 
   if (isLoading) {
     const { height, width } = Dimensions.get("window");
@@ -113,94 +182,97 @@ export default function HomeScreen() {
     );
   }
 
+  // console.log('Favorites store state:', useFavoritesStore.getState());
+
+  const displayItems = items.length > 0 ? items : cachedItems;
   return (
-  <View style={{ flex: 1 }}>
-    {/* ✅ Floating Favorites button */}
-    <TouchableOpacity
-      style={{
-        position: "absolute",
-        top: 50,
-        right: 20,
-        zIndex: 10,
-        backgroundColor: "rgba(0,0,0,0.6)",
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 20,
-      }}
-      onPress={() => navigation.navigate("Favorites")}
-    >
-      <Text style={{ color: "white", fontSize: 14 }}>❤️ Favorites</Text>
-    </TouchableOpacity>
+    <View style={{ flex: 1 }}>
+      {/* ✅ Floating Favorites button */}
+      <TouchableOpacity
+        style={{
+          position: "absolute",
+          top: 50,
+          right: 20,
+          zIndex: 10,
+          backgroundColor: "rgba(0,0,0,0.6)",
+          paddingHorizontal: 12,
+          paddingVertical: 8,
+          borderRadius: 20,
+        }}
+        onPress={() => navigation.navigate("Favorites")}
+      >
+        <Text style={{ color: "white", fontSize: 14 }}>❤️ Favorites</Text>
+      </TouchableOpacity>
 
-    {/* ✅ Main image grid */}
-    <FlashList
-      key={cols}
-      ref={flatListRef}
-      data={items}
-      numColumns={cols}
-      initialScrollIndex={lastVisibleIndexRef.current}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item, index }) => (
-        <View style={{ flex: 1 / cols, aspectRatio: 1, padding: 4 }}>
-          {/* Whole card clickable for navigation */}
-          <TouchableOpacity
-            style={{ flex: 1, borderRadius: 8, overflow: "hidden" }}
-            activeOpacity={0.9}
-            onPress={() => navigation.navigate("Viewer", { index, items })}
-          >
-            <ExpoImage
-              source={{ uri: item.thumbUrl }}
-              style={{ flex: 1, borderRadius: 8 }}
-              contentFit="cover"
-              cachePolicy="disk"
-            />
-
-            {/* Favorite button overlay (heart) */}
+      {/* ✅ Main image grid */}
+      <FlashList
+        key={cols}
+        ref={flatListRef}
+        data={displayItems}
+        numColumns={cols}
+        initialScrollIndex={displayItems.length > 0 ? lastVisibleIndexRef.current : undefined}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item, index }) => (
+          <View style={{ flex: 1 / cols, aspectRatio: 1, padding: 4 }}>
+            {/* Whole card clickable for navigation */}
             <TouchableOpacity
-              style={{
-                position: "absolute",
-                top: 8,
-                right: 8,
-                backgroundColor: "rgba(0,0,0,0.5)",
-                borderRadius: 16,
-                padding: 4,
-              }}
-              onPress={() => toggleFavorite(item.id)}
+              style={{ flex: 1, borderRadius: 8, overflow: "hidden" }}
+              activeOpacity={0.9}
+              onPress={() => navigation.navigate("Viewer", { index, items: displayItems })}
             >
-              <Text style={{ fontSize: 18, color: favorites[item.id] ? "red" : "white" }}>
-                {favorites[item.id] ? "♥" : "♡"}
-              </Text>
+              <ExpoImage
+                source={{ uri: item.thumbUrl }}
+                style={{ flex: 1, borderRadius: 8 }}
+                contentFit="cover"
+                cachePolicy="disk"
+              />
+
+              {/* Favorite button overlay (heart) */}
+              <TouchableOpacity
+                style={{
+                  position: "absolute",
+                  top: 8,
+                  right: 8,
+                  backgroundColor: "rgba(0,0,0,0.5)",
+                  borderRadius: 16,
+                  padding: 4,
+                }}
+                onPress={() => toggleFavorite(item)}
+              >
+                <Text style={{ fontSize: 18, color: favorites[item.id] ? "red" : "white" }}>
+                  {favorites[item.id] ? "♥" : "♡"}
+                </Text>
+              </TouchableOpacity>
             </TouchableOpacity>
-          </TouchableOpacity>
-        </View>
-      )}
-      onViewableItemsChanged={({ viewableItems }) => {
-        if (viewableItems && viewableItems.length > 0 && viewableItems[0].index != null) {
-          lastVisibleIndexRef.current = viewableItems[0].index as number;
+          </View>
+        )}
+        onViewableItemsChanged={({ viewableItems }) => {
+          if (viewableItems && viewableItems.length > 0 && viewableItems[0].index != null) {
+            lastVisibleIndexRef.current = viewableItems[0].index as number;
+          }
+        }}
+        onScroll={(event) => {
+          scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+        }}
+        onMomentumScrollEnd={(event) => {
+          scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+        }}
+        onScrollEndDrag={(event) => {
+          scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+        }}
+        scrollEventThrottle={16}
+        onEndReached={() => {
+          if (!isFetchingNextPage) fetchNextPage();
+        }}
+        onEndReachedThreshold={0.6}
+        ListFooterComponent={() =>
+          isFetchingNextPage ? <ActivityIndicator /> : null
         }
-      }}
-      onScroll={(event) => {
-        scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
-      }}
-      onMomentumScrollEnd={(event) => {
-        scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
-      }}
-      onScrollEndDrag={(event) => {
-        scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
-      }}
-      scrollEventThrottle={16}
-      onEndReached={() => {
-        if (!isFetchingNextPage) fetchNextPage();
-      }}
-      onEndReachedThreshold={0.6}
-      ListFooterComponent={() =>
-        isFetchingNextPage ? <ActivityIndicator /> : null
-      }
-      refreshControl={
-        <RefreshControl refreshing={!!isRefetching} onRefresh={handleRefresh} />
-      }
-      extraData={cols}
-    />
-  </View>
+        refreshControl={
+          <RefreshControl refreshing={!!isRefetching} onRefresh={handleRefresh} />
+        }
+        extraData={cols}
+      />
+    </View>
   );
 }

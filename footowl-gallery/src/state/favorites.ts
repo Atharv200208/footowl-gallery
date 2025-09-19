@@ -1,28 +1,40 @@
-import create from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-type FavoriteState = {
-    favorites: Record<string, true>;
-    toggle: (id: string) => void;
-    isFav: (id:string) => boolean;
+export type FavoritesState = {
+    favorites: Record<string, boolean>;
+    toggleFavorite: (id: string) => void;
+    // Back-compat alias for older code paths
+    toggleFavorites?: (id: string) => void;
+    isFavorite: (id:string) => boolean;
+    loadFavorites: () => void;
 };
 
-export const useFavorites = create<FavoriteState>()(
+export const useFavoritesStore = create<FavoritesState>()(
     persist(
         (set, get) => ({
             favorites: {},
-            toggle: (id:string) => {
-                const favs = { ...get().favorites };
-                if(favs[id]) delete favs[id];
-                else favs[id] delete favs[id];
-                set({ favorites: favs });
+            toggleFavorite: (id: string) => {
+                const favoritesCopy: Record<string, boolean> = { ...get().favorites };
+                if (favoritesCopy[id]) {
+                    delete favoritesCopy[id];
+                } else {
+                    favoritesCopy[id] = true;
+                }
+                set({ favorites: favoritesCopy });
             },
-            isFav: (id: string) => !!get().favorites[id],
+            // Alias method to support legacy calls
+            toggleFavorites: (id: string) => {
+                const fn = (get() as FavoritesState).toggleFavorite;
+                if (typeof fn === 'function') fn(id);
+            },
+            isFavorite: (id: string) => !!get().favorites[id],
+            loadFavorites: () => { /* persisted store rehydrates automatically; keep for API compatibility */ },
         }),
         {
             name: 'fotoowl-favs',
-            getStorage: () => AsyncStorage,
+            storage: createJSONStorage(() => AsyncStorage),
         }
     )
 );

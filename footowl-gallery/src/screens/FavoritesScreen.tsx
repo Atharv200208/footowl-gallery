@@ -29,8 +29,7 @@ export default function FavoritesScreen() {
     loadFavorites();
   }, [loadFavorites]);
 
-  const favoriteItems = Object.values(favorites).filter(Boolean); // items stored as objects
-  const items = Array.isArray(favoriteItems) ? favoriteItems : [];
+  const items = Object.values(favorites); // now full ImageItem objects
 
   if (!items || items.length === 0) {
     return (
@@ -39,6 +38,8 @@ export default function FavoritesScreen() {
       </View>
     );
   }
+
+  //console.log("Favorites state:", favorites);
 
   return (
     <FlashList
@@ -71,7 +72,7 @@ export default function FavoritesScreen() {
                 borderRadius: 16,
                 padding: 4,
               }}
-              onPress={() => toggleFavorite(item.id)}
+              onPress={() => toggleFavorite(item)} // ✅ pass full object
             >
               <Text style={{ fontSize: 18, color: "red" }}>♥</Text>
             </TouchableOpacity>
