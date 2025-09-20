@@ -50,7 +50,7 @@ export async function fetchImages(
     thumbUrl: r.thumbnail_url ?? r.med_url ?? r.img_url,
     width: r.width,
     height: r.height,
-    caption: r.name,
+    name: r.name,
     createdAt: r.create_time,
   }));
 

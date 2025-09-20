@@ -1,6 +1,4 @@
 import { registerRootComponent } from 'expo';
-import { ErrorBoundary } from "react-error-boundary";
-
 import App from './src/App';
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);

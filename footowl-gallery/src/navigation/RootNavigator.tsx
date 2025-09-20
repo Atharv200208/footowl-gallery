@@ -1,7 +1,9 @@
 import React from "react";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { BottomTabBarButtonProps, createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
+import { TouchableOpacity } from "react-native";
+import { Pressable } from "react-native";
 
 import HomeScreen from "../screens/Home";
 import FavoritesScreen from "../screens/FavoritesScreen";
@@ -24,12 +26,38 @@ export type RootStackParamList = {
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+function CustomTabButton({ children, onPress, accessibilityState }: BottomTabBarButtonProps) {
+  const focused = accessibilityState?.selected;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: pressed
+          ? "rgba(0,0,0,0.1)" // when hovered (web/desktop)
+          : focused
+          ? "rgba(255, 0, 0, 0.1)" // selected tab
+          : "transparent",
+        borderRadius: 12,
+        margin: 4,
+        padding: 6,
+      })}
+    >
+      {children}
+    </Pressable>
+  );
+}
+
 // ✅ Tabs definition
 function TabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        tabBarIcon: ({ color, size }) => {
+        tabBarButton: (props) => <CustomTabButton {...props} />,
+        tabBarIcon: ({ color, size, focused }) => {
           let iconName: keyof typeof Ionicons.glyphMap = "home";
 
           if (route.name === "Home") {
@@ -40,7 +68,16 @@ function TabNavigator() {
             iconName = "settings";
           }
 
-          return <Ionicons name={iconName} size={size} color={color} />;
+          // ✅ scale icon up slightly when focused
+          const scale = focused ? 1.2 : 1.0;
+
+          return (
+            <Ionicons
+              name={iconName}
+              size={size * scale}
+              color={color}
+            />
+          );
         },
         headerShown: false,
         tabBarActiveTintColor: "tomato",
@@ -48,11 +85,12 @@ function TabNavigator() {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Favorites" component={FavoritesScreen}/>
+      <Tab.Screen name="Favorites" component={FavoritesScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );
 }
+
 
 // ✅ Root stack
 export default function RootNavigator() {
