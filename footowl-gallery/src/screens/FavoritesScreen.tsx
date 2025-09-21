@@ -12,6 +12,8 @@ import { FlashList } from "@shopify/flash-list";
 import { Image as ExpoImage } from "expo-image";
 import { useFavoritesStore } from "../../state/favorites";
 import Toast from "react-native-toast-message";
+import { useTheme } from "../theme/ThemeProvider";
+import { lightTheme, darkTheme } from "../theme/theme";
 
 type RootStackParamList = {
   Home: undefined;
@@ -25,9 +27,10 @@ export default function FavoritesScreen() {
 
   const flatListRef = useRef<any>(null);
   const cols = Math.max(1, Math.floor(Dimensions.get("window").width / 150));
-  const handleFavoriteToggle = (item) => {
+  const handleFavoriteToggle = (item: any) => {
   const isCurrentlyFavorite = !!favorites[item.id]; // check before toggle
   toggleFavorite(item);
+
 
   Toast.show({
     type: 'success',
@@ -42,7 +45,8 @@ export default function FavoritesScreen() {
     loadFavorites();
   }, [loadFavorites]);
 
-  
+    const { theme } = useTheme();
+  const colors = theme === "dark" ? darkTheme : lightTheme; 
 
   if (!items || items.length === 0) {
     return (
@@ -62,7 +66,7 @@ export default function FavoritesScreen() {
       key={cols}
       keyExtractor={(item: any) => item.id}
       renderItem={({ item, index }) => (
-        <View style={{ flex: 1 / cols, aspectRatio: 1, padding: 4 }}>
+        <View style={{ flex: 1 / cols, aspectRatio: 1, padding: 4 , backgroundColor: colors.background}}>
           <TouchableOpacity
             style={{ flex: 1, borderRadius: 8, overflow: "hidden" }}
             activeOpacity={0.9}
