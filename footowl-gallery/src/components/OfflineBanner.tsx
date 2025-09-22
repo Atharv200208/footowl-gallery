@@ -2,7 +2,7 @@
 import React, { useEffect } from "react";
 import { View, Text } from "react-native";
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withRepeat } from "react-native-reanimated";
-import { useTheme } from "../src/theme/ThemeProvider";
+import { useTheme } from "../theme/ThemeProvider";
 
 export default function OfflineBanner() {
   const { theme } = useTheme();

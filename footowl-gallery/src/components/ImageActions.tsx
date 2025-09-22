@@ -3,7 +3,7 @@ import { View, Alert, Share, Platform, TouchableOpacity, Text } from "react-nati
 import * as MediaLibrary from "expo-media-library";
 import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
-import { useTheme } from "../src/theme/ThemeProvider";
+import { useTheme } from "../theme/ThemeProvider";
 
 type Props = {
     uri: string; // e.g. "https://storage.fotoowl.ai/events/154770/...jpg"

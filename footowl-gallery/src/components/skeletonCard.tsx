@@ -1,8 +1,7 @@
 import { View } from "react-native";
 import React from "react";
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withRepeat } from "react-native-reanimated";
-import { useTheme } from "../src/theme/ThemeProvider";
-
+import { useTheme } from "../theme/ThemeProvider";
 export function SkeletonCard() {
   const { theme } = useTheme();
   const shimmer = useSharedValue(0.6);
