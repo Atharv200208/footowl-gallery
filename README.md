@@ -119,4 +119,54 @@ git checkout -b feature/your-feature-name
 📜 License
 This project is licensed under the MIT License.
 
+
+---Architecture overview
+1. High level: The app is a React Native (Expo) application. UI is organized using a screens/ components/ state/ folder structure:
+
+2. screens/ — Home, ImageViewer, Favorites, Settings
+
+3. components/ — lightweight presentational components (GridItem, ImageModal, Header)
+
+4. state/ — Zustand / Redux / Context (pick one; whichever you used) for favorites, theme, and network state
+
+5. services/ — networking and caching layers
+
+6. utils/ — helpers (formatting, offline helpers)
+
+7. Data & offline: Images are requested from API_BASE_URL. Responses are cached in a lightweight store + filesystem cache (expo-file-system or react-native-fs) for offline viewing of previously seen images. The app uses an LRU-ish strategy: cap cached images to N MB / M items and evict oldest.
+
+8. Trade-offs: I used a simple client-side cache and a memory-efficient grid (FlashList/FlatList with windowing) for fast development and stable UX. This trades off advanced server-driven pagination or persistent DB (SQLite/Realm). This approach gives good performance for a small/medium dataset and is quicker to implement in a short timeline.
+
+---Performance notes (what I did for smooth scroll & memory)
+
+1. Use FlashList (or FlatList with getItemLayout and initialNumToRender) to enable smooth infinite scroll.
+
+2. Image optimization:
+Request appropriately sized thumbnails from server (or use resize params).
+Use expo-image or Image with cache enabled so images are cached and not repeatedly decoded.
+
+3. Memoization:
+React.memo on GridItem.
+useCallback for item renderers and handlers.
+Windowing & virtualization: keep windowSize small enough for memory but large enough for smoothness.
+Limit the in-memory image count; use filesystem cache for older images.
+Avoid heavy synchronous work on the JS thread — defer non-urgent tasks with setTimeout or InteractionManager.
+Clean up listeners on unmount.
+
+---Known limitations + next steps
+
+Known limitations
+```
+Favorites are stored locally; no server sync.
+Cache eviction is naive (based on total files, not strict LRU).
+No offline-first full sync; newly added data requires connectivity.
+Only a basic accessibility pass — needs further ARIA/AccessibilityLabel work for full accessibility compliance.
+```
+2. Next steps
+```
+Add server-backed favorites + authentication.
+Replace cache with SQLite/Realm for robust offline sync.
+Add E2E tests (Detox) and production CI/CD.
+Improve accessibility and internationalization.
+```
 Atharv Raut
