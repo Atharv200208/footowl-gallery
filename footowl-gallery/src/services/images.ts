@@ -2,6 +2,7 @@ import { fetchJSON } from "./fetchJson";
 
 export type ImageItem = {
   id: string;
+   event_id: string;   //
   url: string;       // full-size
   thumbUrl: string;  // small for grid
   width?: number;
@@ -46,6 +47,7 @@ export async function fetchImages(
   const rawItems = json?.data?.image_list ?? [];
   const items: ImageItem[] = rawItems.map((r) => ({
     id: String(r.id),
+    event_id: String(r.event_id),
     url: r.img_url ?? r.high_url ?? r.med_url,
     thumbUrl: r.thumbnail_url ?? r.med_url ?? r.img_url,
     width: r.width,

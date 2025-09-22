@@ -8,7 +8,7 @@ import { Button } from "react-native";
 import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ThemeProvider } from './theme/ThemeProvider';
-
+import * as Linking from 'expo-linking';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -19,6 +19,23 @@ const queryClient = new QueryClient({
     },
 });
 
+const prefix = Linking.createURL("/");
+
+const linking = {
+  prefixes: ["http://localhost:8081", "myapp://"],
+  config: {
+    screens: {
+      Tabs: {
+        screens: {
+          Home: "event/:eventId", // Home can be tied to eventId if needed
+          Favorites: "favorites",
+          Settings: "settings",
+        },
+      },
+      Viewer: "event/:eventId/image/:imageId",
+    },
+  },
+};
 
 export default function App(){
     return (
@@ -26,7 +43,7 @@ export default function App(){
         <ThemeProvider>
         <GestureHandlerRootView style={styles.flex}>
         <QueryClientProvider client={queryClient}>
-            <NavigationContainer>
+            <NavigationContainer linking={linking}>
                 <RootNavigator />
             </NavigationContainer>
         </QueryClientProvider>

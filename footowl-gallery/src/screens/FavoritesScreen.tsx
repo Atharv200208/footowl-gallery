@@ -46,57 +46,58 @@ export default function FavoritesScreen() {
   }, [loadFavorites]);
 
     const { theme } = useTheme();
-  const colors = theme === "dark" ? darkTheme : lightTheme; 
+  // const colors = theme === "dark" ? darkTheme : lightTheme; 
 
   if (!items || items.length === 0) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text style={{ fontSize: 16, color: "#666" }}>No favorites yet.</Text>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: theme.background }}>
+        <Text style={{ fontSize: 16, color: theme.text }}>No favorites yet.</Text>
       </View>
     );
   }
 
   //console.log("Favorites state:", favorites);
 
-  return (
-    <FlashList
-      ref={flatListRef}
-      data={items}
-      numColumns={cols}
-      key={cols}
-      keyExtractor={(item: any) => item.id}
-      renderItem={({ item, index }) => (
-        <View style={{ flex: 1 / cols, aspectRatio: 1, padding: 4 , backgroundColor: colors.background}}>
+return (
+   <View style={{ flex: 1, backgroundColor: theme.background }}>
+  <FlashList
+    ref={flatListRef}
+    data={items}
+    numColumns={cols}
+    key={cols}
+    keyExtractor={(item: any) => item.id}
+    renderItem={({ item, index }) => (
+      <View style={{ flex: 1 / cols, aspectRatio: 1, padding: 4 }}>
+        <TouchableOpacity
+          style={{ flex: 1, borderRadius: 8, overflow: "hidden"}}
+          activeOpacity={0.9}
+          onPress={() => navigation.navigate("Viewer", { index, items })}
+        >
+          <ExpoImage
+            source={{ uri: item.thumbUrl }}
+            style={{ flex: 1, borderRadius: 8 }}
+            contentFit="cover"
+            cachePolicy="disk"
+          />
           <TouchableOpacity
-            style={{ flex: 1, borderRadius: 8, overflow: "hidden" }}
-            activeOpacity={0.9}
-            onPress={() => navigation.navigate("Viewer", { index, items })}
+            style={{
+              position: "absolute",
+              top: 8,
+              right: 8,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              borderRadius: 16,
+              padding: 4,
+            }}
+            onPress={() => handleFavoriteToggle(item)}
           >
-            <ExpoImage
-              source={{ uri: item.thumbUrl }}
-              style={{ flex: 1, borderRadius: 8 }}
-              contentFit="cover"
-              cachePolicy="disk"
-            />
-
-            {/* Heart toggle */}
-            <TouchableOpacity
-              style={{
-                position: "absolute",
-                top: 8,
-                right: 8,
-                backgroundColor: "rgba(0,0,0,0.5)",
-                borderRadius: 16,
-                padding: 4,
-              }}
-              onPress={() => handleFavoriteToggle(item)} // ✅ pass full object
-            >
-              <Text style={{ fontSize: 18, color: "red" }}>♥</Text>
-            </TouchableOpacity>
+            <Text style={{ fontSize: 18, color: "red" }}>♥</Text>
           </TouchableOpacity>
-        </View>
-      )}
-      ListFooterComponent={<ActivityIndicator animating={false} />}
-    />
-  );
+        </TouchableOpacity>
+      </View>
+    )}
+    ListFooterComponent={<ActivityIndicator animating={false} />}
+  />
+  </View>
+);
+
 }

@@ -1,187 +1,142 @@
-// import React from "react";
-// import {
-//   View,
-//   Text,
-//   TouchableOpacity,
-//   FlatList,
-//   Dimensions,
-// } from "react-native";
-// // import { Image as ExpoImage } from "expo-image";
-// import { StatusBar } from "expo-status-bar";
-// import { useRoute, useNavigation } from "@react-navigation/native";
-// import { ZoomableImage } from "../../components/ZoomableImage";
-// import Ionicons from "@expo/vector-icons/Ionicons";
+  import React, { useRef, useEffect, useState } from "react";
+  import {
+    View,
+    FlatList,
+    Dimensions,
+    StyleSheet,
+    TouchableOpacity,
+    StatusBar,
+    Text,
+    ActivityIndicator,
+  } from "react-native";
+  import { useRoute, useNavigation } from "@react-navigation/native";
+  import Ionicons from "@expo/vector-icons/Ionicons";
+  import { ZoomableImage } from "../../components/ZoomableImage";
+  import { ImageActions } from "../../components/ImageActions";
+  import HomeScreen from "./Home";
+  const { width, height } = Dimensions.get("window");
+import { NativeSecurity } from "../utils/NativeSecurity";
 
-// export default function ViewerScreen() {
-//   const route = useRoute<any>();
-//   const navigation = useNavigation();
-//   const { index, items } = route.params; // 👈 must pass from HomeScreen
-//   const { width, height } = Dimensions.get("window");
+  type RouteParams = {
+   Home: undefined;
+    eventId: string;  // ✅ always strings in React Navigation
+    imageId: string;
+  };
 
-//   return (
-//     <View style={{ flex: 1, backgroundColor: "#000" }}>
-//       <StatusBar hidden />
-//       <FlatList
-//         data={items}
-//         horizontal
-//         pagingEnabled
-//         showsHorizontalScrollIndicator={false}
-//         showsVerticalScrollIndicator={false}
-//         initialScrollIndex={index}
-//         keyExtractor={(item) => item.id}
-//         getItemLayout={(data, i) => ({
-//           length: width,
-//           offset: width * i,
-//           index: i,
-//         })}
-//         renderItem={({ item }) => <ZoomableImage uri={item.url} />}        
-//       />
+  export default function ViewerScreen() {
+    const route = useRoute<any>();
+    const navigation = useNavigation();
 
-//       {/* Close button overlay */}
-//       <TouchableOpacity
-//         onPress={() => navigation.goBack()}
-//         style={{ position: "absolute", top: 40, right: 20 }}
-//       >
-//         <Ionicons name="close" size={30} color="white" />
-//       </TouchableOpacity>
-//     </View>
-//   );
-// }
+    const { eventId, imageId } = (route.params ?? {}) as RouteParams;
+
+    const [items, setItems] = useState<any[]>([]);
+    const [startIndex, setStartIndex] = useState(0);
+    const [loading, setLoading] = useState(true);
+
+    const listRef = useRef<FlatList<any>>(null);
+
+    useEffect(() => {
+      if (!eventId) {
+        console.error("❌ ViewerScreen: missing eventId");
+        return;
+      }
 
 
-
-// src/screens/ViewerScreen.tsx
-// import React, { useRef } from 'react';
-// import { View, Dimensions, StyleSheet, StatusBar, TouchableOpacity } from 'react-native';
-// import PagerView from 'react-native-pager-view';
-// import Ionicons from '@expo/vector-icons/Ionicons';
-// import { useRoute, useNavigation } from '@react-navigation/native';
-// import { ZoomableImage } from '../../components/ZoomableImage';
-// const { width, height } = Dimensions.get('window');
-
-// export default function ViewerScreen() {
-//   const route = useRoute<any>();
-//   const navigation = useNavigation();
-//   const { index = 0, items = [] } = route.params ?? {};
-//   const pagerRef = useRef<PagerView | null>(null);
-
-//   return (
-//     <View style={styles.container}>
-//       <StatusBar hidden />
-//       <PagerView
-//         style={styles.pager}
-//         initialPage={index}
-//         ref={pagerRef}
-//       >
-//         {items.map((item: any, i: number) => (
-//           <View key={item.id ?? i} style={styles.page}>
-//             <ZoomableImage uri={item.url ?? item.fullUrl ?? item.thumbnailUrl} />
-//           </View>
-//         ))}
-//       </PagerView>
-
-//       <TouchableOpacity
-//         onPress={() => navigation.goBack()}
-//         style={styles.closeBtn}
-//         accessibilityLabel="Close viewer"
-//       >
-//         <Ionicons name="close" size={30} color="white" />
-//       </TouchableOpacity>
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: { flex: 1, backgroundColor: '#000' },
-//   pager: { flex: 1 },
-//   page: { width, height, justifyContent: 'center', alignItems: 'center' },
-//   closeBtn: { position: 'absolute', top: 40, right: 20 },
-// });
-
-
-
-// src/screens/Viewer.tsx
-// src/screens/Viewer.tsx
-// // src/screens/Viewer.tsx
-import React, { useRef, useEffect } from "react";
-import {
-  View,
-  FlatList,
-  Dimensions,
-  StyleSheet,
-  TouchableOpacity,
-  StatusBar,
-  Platform,
-} from "react-native";
-import { useRoute, useNavigation } from "@react-navigation/native";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import { ZoomableImage } from "../../components/ZoomableImage";
-const { width, height } = Dimensions.get("window");
-
-export default function ViewerScreen() {
-  const route = useRoute<any>();
-  const navigation = useNavigation();
-  const { index = 0, items = [] } = route.params ?? {};
-  const listRef = useRef<FlatList<any>>(null);
-
-  useEffect(() => {
-    // Ensure we scroll to the tapped index
-    if (listRef.current) {
-      setTimeout(() => {
+      async function fetchImagesForEvent() {
         try {
-          listRef.current?.scrollToIndex({ index, animated: false });
-        } catch {
-          // fallback if index is out of range
+          setLoading(true);
+          const res = await fetch(
+            `https://openapi.fotoowl.ai/open/event/image-list?event_id=${eventId}&page=0&page_size=40&key=4030&order_by=2&order_asc=true`
+          );
+          const json = await res.json();
+          const imgs = json?.items ?? json?.data?.image_list ?? []; // handle both response formats
+          setItems(imgs);
+
+          // find tapped image index
+          const idx = imgs.findIndex((img: any) => String(img.id) === String(imageId));
+          setStartIndex(idx >= 0 ? idx : 0);
+        } catch (err) {
+          console.error("❌ Failed to load images:", err);
+        } finally {
+          setLoading(false);
         }
-      }, 50);
+      }
+
+      fetchImagesForEvent();
+    }, [eventId, imageId]);
+
+    
+    useEffect(() => {
+      // Enable capture prevention on mount
+      NativeSecurity.preventCapture(true);
+
+      // Disable when leaving screen
+      return () => {
+        NativeSecurity.preventCapture(false);
+      };
+    }, []);
+
+    if (loading) {
+      return (
+        <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+          <ActivityIndicator size="large" color="#fff" />
+          <Text style={{ color: "white", marginTop: 10 }}>Loading images...</Text>
+        </View>
+      );
     }
-  }, [index]);
 
-  return (
-    <View style={styles.container}>
-      <StatusBar hidden />
-      <FlatList
-        ref={listRef}
-        data={items}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        initialScrollIndex={index}
-        keyExtractor={(item, i) => item.id ?? String(i)}
-        getItemLayout={(_, i) => ({
-          length: width,
-          offset: width * i,
-          index: i,
-        })}
-        renderItem={({ item }) => (
-          <View style={styles.page}>
-            <ZoomableImage uri={item.url ?? item.fullUrl ?? item.thumbnailUrl} />
-          </View>
+    return (
+      <View style={styles.container}>
+        <StatusBar hidden />
+
+        {items.length > 0 ? (
+          <FlatList
+            ref={listRef}
+            data={items}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            initialScrollIndex={startIndex}
+            getItemLayout={(_, i) => ({
+              length: width,
+              offset: width * i,
+              index: i,
+            })}
+            keyExtractor={(item) => String(item.id)}
+            renderItem={({ item }) => (
+              <View style={styles.page}>
+                <ZoomableImage uri={item.img_url ?? item.high_url ?? item.med_url} />
+              </View>
+            )}
+          />
+        ) : (
+          <Text style={{ color: "white" }}>No images found.</Text>
         )}
-        // Fix occasional scrollToIndex error
-        onScrollToIndexFailed={(info) => {
-          setTimeout(() => {
-            listRef.current?.scrollToOffset({
-              offset: info.averageItemLength * info.index,
-              animated: false,
-            });
-          }, 50);
-        }}
-      />
 
-      <TouchableOpacity
-        onPress={() => navigation.goBack()}
-        style={styles.closeBtn}
-        accessibilityLabel="Close viewer"
-      >
-        <Ionicons name="close" size={30} color="white" />
-      </TouchableOpacity>
-    </View>
-  );
-}
+        {/* Close button */}
+        <TouchableOpacity
+onPress={() => {
+  if (navigation.canGoBack()) {
+    navigation.goBack();
+  } else {
+    // Correct way to jump into a nested navigator
+    navigation.navigate("Tabs", { screen: "Home" } as never);
+  }
+}}
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#000" },
-  page: { width, height, justifyContent: "center", alignItems: "center" },
-  closeBtn: { position: "absolute", top: 40, right: 20 },
-});
+    style={styles.closeBtn}
+    accessibilityLabel="Close viewer"
+  >
+    <Ionicons name="close" size={30} color="white" />
+  </TouchableOpacity>
+        {/* Actions (share / save) */}
+        {items[startIndex] && <ImageActions uri={items[startIndex].img_url} />}
+      </View>
+    );
+  }
+
+  const styles = StyleSheet.create({
+    container: { flex: 1, backgroundColor: "#000" },
+    page: { width, height, justifyContent: "center", alignItems: "center" },
+    closeBtn: { position: "absolute", top: 40, right: 20 },
+  });
