@@ -127,7 +127,7 @@ export type RootTabParamList = {
 export type RootStackParamList = {
   Home: undefined;
   Tabs: undefined;
-  Viewer: { index: number; items: any[]; eventId: string; imageId: string };
+  Viewer: { index: number; items: any[]; eventId: number; imageId: number };
 };
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
