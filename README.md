@@ -161,6 +161,7 @@ Favorites are stored locally; no server sync.
 Cache eviction is naive (based on total files, not strict LRU).
 No offline-first full sync; newly added data requires connectivity.
 Only a basic accessibility pass — needs further ARIA/AccessibilityLabel work for full accessibility compliance.
+Swipe-to-change-image functionality is not implemented due to gesture handling conflicts with the FlashList component and current navigation setup
 ```
 2. Next steps
 ```
