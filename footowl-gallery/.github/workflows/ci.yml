@@ -7,14 +7,29 @@ on:
     branches: [ master ]
 
 jobs:
-  build-and-test:
+  build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          node-version: 20
-      - run: npm install --legacy-peer-deps
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm test
+          node-version: 18
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Type check (tsc)
+        run: npx tsc --noEmit
+
+      - name: Run ESLint
+        run: npx eslint . --ext .ts,.tsx
+
+      - name: Run Prettier (check only)
+        run: npx prettier --check .
+
+      - name: Run tests
+        run: npm test -- --watchAll=false
