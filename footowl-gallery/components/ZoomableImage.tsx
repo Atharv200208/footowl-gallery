@@ -74,6 +74,7 @@ const pan = Gesture.Pan()
             source={{ uri }}
             style={{ width, height }}
             contentFit="contain"
+            transition={300}
             cachePolicy="disk"
           />
         </Animated.View>

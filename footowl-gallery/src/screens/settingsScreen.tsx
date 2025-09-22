@@ -35,22 +35,39 @@ export default function SettingsScreen() {
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: theme.background,
+        padding: 16,
       }}
     >
-      <Text
+      <View
         style={{
-          fontSize: 20,
-          marginBottom: 10,
-          color: theme.text,
+          width: "100%",
+          maxWidth: 480,
+          backgroundColor: theme.surface,
+          borderRadius: 16,
+          padding: 20,
+          shadowColor: theme.shadow.color,
+          shadowOpacity: theme.shadow.opacity,
+          shadowRadius: theme.shadow.radius,
+          shadowOffset: { width: 0, height: 4 },
+          elevation: theme.shadow.elevation,
         }}
       >
-        Current theme: {mode.toUpperCase()}
-      </Text>
+        <Text
+          style={{
+            fontSize: 20,
+            marginBottom: 14,
+            color: theme.text,
+            fontWeight: "600",
+          }}
+        >
+          Appearance
+        </Text>
 
-      <Switch
-        value={mode === "dark"}   // ✅ check mode (string)
-        onValueChange={toggleTheme}
-      />
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <Text style={{ color: theme.muted }}>Dark mode</Text>
+          <Switch value={mode === "dark"} onValueChange={toggleTheme} />
+        </View>
+      </View>
     </View>
   );
 }

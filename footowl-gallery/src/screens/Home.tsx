@@ -297,7 +297,7 @@
 //   );
 // }
 
-import React, { useRef, useEffect, useCallback } from "react";
+import React, { useRef, useEffect, useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -308,6 +308,7 @@ import {
   TextInput,
   InteractionManager,
   Platform,
+  StatusBar,
 } from "react-native";
 import { Image as ExpoImage } from "expo-image";
 import {
@@ -353,6 +354,7 @@ const ImageCard = React.memo(
           source={{ uri: item.thumbUrl ?? item.img_url }}
           style={{ flex: 1, borderRadius: 8 }}
           contentFit="cover"
+          transition={300}
           cachePolicy="disk"
         />
 
@@ -390,6 +392,8 @@ export default function HomeScreen() {
   const [orderBy, setOrderBy] = React.useState<number>(2);
   const [orderAsc, setOrderAsc] = React.useState<boolean>(true);
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [compact, setCompact] = useState(false);
+  const [showFab, setShowFab] = useState(false);
 
   const { isOfflineNetwork } = useNetwork();
 
@@ -416,7 +420,8 @@ export default function HomeScreen() {
     );
   });
 
-  const cols = Math.max(1, Math.floor(Dimensions.get("window").width / 150));
+  const baseColWidth = compact ? 120 : 150;
+  const cols = Math.max(1, Math.floor(Dimensions.get("window").width / baseColWidth));
   const screenW = Dimensions.get("window").width;
   const cell = Math.floor(screenW / cols);
 
@@ -426,7 +431,7 @@ export default function HomeScreen() {
   const lastVisibleIndexRef = useRef(0);
 
   const { favorites, toggleFavorite, loadFavorites } = useFavoritesStore();
-  const { theme } = useTheme();
+  const { theme, mode } = useTheme();
 
   const keyExtractor = useCallback((item: any) => String(item.id), []);
 
@@ -555,21 +560,49 @@ export default function HomeScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <StatusBar barStyle={mode === "dark" ? "light-content" : "dark-content"} backgroundColor={theme.background as any} />
       {isOfflineNetwork && <OfflineBanner />}
 
-      <TextInput
-        placeholder="Search images..."
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-        style={{
-          margin: 10,
-          padding: 8,
-          borderWidth: 1,
-          borderColor: "#ccc",
-          borderRadius: 8,
-          backgroundColor: "white",
-        }}
-      />
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginHorizontal: 12, marginTop: 10 }}>
+        <TextInput
+          placeholder="Search images..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          style={{
+            flex: 1,
+            marginRight: 10,
+            paddingVertical: 10,
+            paddingHorizontal: 12,
+            borderWidth: 1,
+            borderColor: theme.border,
+            borderRadius: 12,
+            backgroundColor: theme.surface,
+            color: theme.text,
+            shadowColor: theme.shadow.color,
+            shadowOpacity: theme.shadow.opacity,
+            shadowRadius: theme.shadow.radius,
+            shadowOffset: { width: 0, height: 2 },
+            elevation: theme.shadow.elevation,
+          }}
+          placeholderTextColor={theme.muted}
+        />
+
+        <TouchableOpacity
+          onPress={() => setCompact((v) => !v)}
+          activeOpacity={0.85}
+          style={{
+            backgroundColor: theme.surface,
+            borderWidth: 1,
+            borderColor: theme.border,
+            paddingVertical: 10,
+            paddingHorizontal: 12,
+            borderRadius: 12,
+          }}
+          accessibilityLabel="Toggle compact grid"
+        >
+          <Text style={{ color: theme.text }}>{compact ? "Compact" : "Cozy"}</Text>
+        </TouchableOpacity>
+      </View>
 
       <FlashList
         key={cols}
@@ -577,10 +610,16 @@ export default function HomeScreen() {
         data={isOfflineNetwork ? cachedItems : displayItems}
         numColumns={cols}
         keyExtractor={keyExtractor}
-        estimatedItemSize={cell}
-        getItemLayout={getItemLayout}
+        
+        
         drawDistance={cell * 3}
         removeClippedSubviews
+        onScroll={(e) => {
+          const offset = e.nativeEvent.contentOffset.y;
+          scrollOffsetRef.current = offset;
+          setShowFab(offset > 300);
+        }}
+        scrollEventThrottle={16}
         renderItem={({ item }) => (
           <ImageCard
             item={item}
@@ -610,6 +649,30 @@ export default function HomeScreen() {
           />
         }
       />
+
+      {showFab && (
+        <TouchableOpacity
+          onPress={() => flatListRef.current?.scrollToOffset?.({ offset: 0, animated: true })}
+          activeOpacity={0.9}
+          style={{
+            position: "absolute",
+            right: 16,
+            bottom: 24,
+            backgroundColor: theme.primary,
+            borderRadius: 28,
+            paddingVertical: 12,
+            paddingHorizontal: 14,
+            shadowColor: theme.shadow.color,
+            shadowOpacity: theme.shadow.opacity,
+            shadowRadius: theme.shadow.radius,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: theme.shadow.elevation,
+          }}
+          accessibilityLabel="Scroll to top"
+        >
+          <Text style={{ color: "white", fontWeight: "700" }}>Top</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

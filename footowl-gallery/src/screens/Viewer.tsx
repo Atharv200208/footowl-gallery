@@ -115,7 +115,7 @@ import { NativeSecurity } from "../utils/NativeSecurity";
 
         {/* Close button */}
         <TouchableOpacity
-onPress={() => {
+        onPress={() => {
   if (navigation.canGoBack()) {
     navigation.goBack();
   } else {
@@ -138,5 +138,5 @@ onPress={() => {
   const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#000" },
     page: { width, height, justifyContent: "center", alignItems: "center" },
-    closeBtn: { position: "absolute", top: 40, right: 20 },
+    closeBtn: { position: "absolute", top: 44, right: 20, backgroundColor: "rgba(0,0,0,0.35)", padding: 8, borderRadius: 20 },
   });
